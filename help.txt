@@ -1,0 +1,66 @@
+Langkah 0: Sebelum menyentuh kode (5-10 menit)
+Baca soal sampai habis, lalu tandai tiap kriteria beserta persentasenya.
+Bandingkan dengan latres ini dan buat peta singkat:
+Mana yang sama persis? (biasanya login, bottom nav, favorit, profil)
+Mana yang beda? (API, field data, aturan login, jenis penyimpanan)
+Mana yang baru? (fitur yang belum ada di projek ini)
+Kerjakan yang persentasenya besar dan paling mirip dulu. Soal sendiri bilang fungsionalitas didahulukan sebelum tampilan.
+Langkah 1: Salin projek, jangan edit yang asli
+Copy folder projek ke folder baru, lalu ganti namanya sesuai soal.
+Kalau soal minta nama repo tertentu (seperti Latres_Mobile_[NIM]), buat repo dengan nama itu dan jangan lupa push di akhir.
+Jalankan flutter pub get dan flutter run sekali untuk memastikan salinannya masih jalan sebelum diubah.
+Langkah 2: Ubah dari bawah ke atas
+
+Urutannya sama dengan urutan data mengalir:
+
+Urutan	File	Yang dicek/diubah
+1	pubspec.yaml	Perlu package baru? (misal notifikasi atau lokasi). Tambahkan, lalu flutter pub get.
+2	show_model.dart	Ganti nama class dan field sesuai JSON API baru. Lihat JSON-nya dulu di browser.
+3	api_service.dart	Ganti base URL dan endpoint. Sesuaikan cara parse (kadang datanya dibungkus key seperti results atau meals).
+4	Controller	Ganti aturan login, atau tambah fungsi baru (filter, pencarian).
+5	Page	Sesuaikan tampilan: field apa yang ditampilkan, grid atau list.
+6	main.dart	Ganti judul, nama box Hive, dan halaman awal kalau perlu.
+
+Tes setelah tiap langkah, jangan menunggu semuanya selesai. Kalau error, kamu langsung tahu penyebabnya ada di langkah mana.
+
+Langkah 3: Contoh pemetaan perubahan
+
+Misalnya soal baru: aplikasi resep dari API publik lain, login pakai NIM, favorit disimpan.
+
+Model: Show jadi Recipe, field name, image, category, instructions.
+Service: fetchShows() jadi fetchRecipes() dengan endpoint baru. Cek bentuk JSON-nya (list langsung atau dibungkus key).
+Login: hampir tidak berubah, cukup cek aturan username dan password di soal.
+Home: s.rating diganti r.category, s.name jadi r.name.
+Detail: sesuaikan field yang diminta soal.
+Favorit dan profil: hampir sama, cuma ganti tipe data.
+
+Kalau bisa pakai fitur Rename Symbol (F2) di VS Code untuk mengganti Show jadi nama baru, semua pemakaiannya ikut berubah sekaligus.
+
+Langkah 4: Kalau ada fitur yang belum ada di projek ini
+
+Soal bisa menambah hal baru dari materi yang sudah dipelajari, misalnya:
+
+Pencarian atau filter: tambah TextField di Home dan variabel query di controller, lalu tampilkan daftar yang sudah difilter.
+Notifikasi atau lokasi (Pt 8): tambah package, izin di AndroidManifest, lalu pasang di titik yang diminta soal.
+Penyimpanan lain: ganti isi FavoriteController saja, tampilan tidak perlu disentuh.
+
+Kalau menemui fitur yang belum kamu kuasai, jangan langsung buka dokumentasi panjang. Cari contoh minimal, tempel, uji sampai jalan, lalu rapikan.
+
+Langkah 5: Hal yang sering bikin telat
+Lupa izin internet di AndroidManifest, sehingga API tidak bisa diakses.
+Salah parse JSON, misalnya field null atau struktur yang ternyata berbeda. Selalu cetak atau lihat contoh JSON dulu.
+Hive error setelah mengubah struktur data. Hapus data app lama (uninstall atau clear data) lalu jalankan ulang.
+Lupa mengganti NIM atau teks profil, padahal itu poin yang mudah didapat.
+Terlalu lama merapikan tampilan sebelum semua kriteria fungsional selesai.
+Langkah 6: Ritual 10 menit terakhir
+Jalankan ulang dari nol dan uji tiap kriteria satu per satu sesuai daftar soal (login, list, detail, favorit, profil, logout).
+Tutup dan buka lagi app untuk memastikan session dan favorit tersimpan.
+Cek panel Problems, perbaiki error merah dulu, peringatan biru belakangan.
+Commit dan push ke repo, lalu pastikan link-nya bisa dibuka.
+Persiapan sebelum ujian
+
+Supaya cepat saat hari H, coba latihan dulu dengan mengubah projek ini sendiri, misalnya:
+
+Ganti ke API lain yang sederhana, dan ubah model serta tampilannya.
+Tambah satu fitur kecil, misalnya kolom pencarian.
+Cari tahu sendiri jawaban “kalau mau ubah X, aku harus buka file mana?” tanpa melihat catatan.

@@ -1,0 +1,147 @@
+Ada 3 langkah: lihat bentuk JSON-nya, tebak tipe tiap bagian, lalu tulis kodenya. Parse yang benar tidak bisa ditebak, jadi selalu mulai dari melihat datanya.
+
+Langkah 1: Lihat JSON asli
+
+Pilih salah satu cara:
+
+Buka URL API di browser. Cara ini paling cepat. Pakai Chrome atau Firefox, dan aktifkan “Pretty print” kalau tampilannya berantakan.
+Cetak di kode untuk memastikan yang diterima app sama dengan yang di browser:
+final res = await http.get(Uri.parse('$_baseUrl/shows'));
+print(res.body);                          // lihat teks mentah
+print(jsonDecode(res.body).runtimeType);  // lihat tipenya: List atau Map
+
+Hasil print muncul di tab Debug Console VS Code.
+
+Langkah 2: Baca bentuknya
+
+Lihat karakter paling awal dari JSON:
+
+Diawali	  Artinya	Tipe di Dart
+[ ... ]	  Daftar	List
+{ ... }	  Objek	    Map<String, dynamic>
+
+Lalu tanyakan 3 hal:
+
+Apakah datanya langsung list/objek, atau dibungkus di dalam key tertentu?
+Apakah field yang kita mau ada di level atas, atau bersarang di dalam objek lain?
+Apa tipe dan kemungkinan null-nya tiap field?
+Langkah 3: Sesuaikan kode berdasarkan bentuknya
+Kasus A: Langsung berupa list (contoh TVMaze /shows)
+
+[ {"id": 1, "name": "Under the Dome"}, {"id": 2, "name": "Person of Interest"} ]
+
+final List data = jsonDecode(res.body);
+return data.map((e) => Show.fromJson(e)).toList();
+
+Kasus B: Dibungkus key (list ada di dalam objek)
+{ "results": [ {"id": 1, "title": "Film A"}, {"id": 2, "title": "Film B"} ] }
+
+Karena yang terluar {, pakai Map dulu, lalu ambil isi key-nya:
+
+final Map<String, dynamic> body = jsonDecode(res.body);
+final List data = body['results'];   // ganti 'results' sesuai nama key di API
+return data.map((e) => Movie.fromJson(e)).toList();
+
+Nama key bisa berbeda tiap API: results, meals, data, items, dan sebagainya.
+
+Kasus C: Detail yang ternyata dibungkus list
+
+Ini yang sering menjebak. Beberapa API mengembalikan detail satu item tetap dalam bentuk list:
+{ "meals": [ {"idMeal": "52772", "strMeal": "Teriyaki Chicken"} ] }
+
+final body = jsonDecode(res.body) as Map<String, dynamic>;
+return Meal.fromJson(body['meals'][0]);   // [0] = ambil item pertama
+
+Kasus D: Field bersarang (objek di dalam objek)
+
+TVMaze punya ini pada gambar dan rating:
+{ "id": 1, "rating": {"average": 6.6}, "image": {"medium": "http://...", "original": "http://..."} }
+Bacanya masuk satu per satu:
+rating: ((json['rating'] as Map?)?['average'] as num?)?.toDouble(),
+image:  (json['image'] as Map?)?['medium'],
+
+Tanda ? memastikan kodenya tidak crash kalau rating atau image ternyata null.
+
+Menyesuaikan tipe data tiap field
+
+Ini sumber error paling umum di fromJson:
+
++--------------------------+------------------------+------------------------------------------+
+| Masalah                  | Contoh                 | Solusi                                   |
++==========================+========================+==========================================+
+| Field bisa null          | rating kosong          | Tipe dibuat nullable (double?) atau beri |
+|                          |                        | nilai default: json['name'] ?? '-'       |
++--------------------------+------------------------+------------------------------------------+
+| Angka kadang int, kadang | rating 7 vs 7.5        | (json['rating'] as num?)?.toDouble()     |
+| double                   |                        |                                          |
++--------------------------+------------------------+------------------------------------------+
+| Id berupa String padahal | "idMeal": "52772"      | Ambil sebagai String, atau               |
+| kita kira int            |                        | int.parse(json['idMeal'])                |
++--------------------------+------------------------+------------------------------------------+
+| Nama key aneh            | strMeal, strMealThumb  | Cocokkan persis, huruf besar-kecil       |
+|                          |                        | berpengaruh                              |
++--------------------------+------------------------+------------------------------------------+
+| Teks mengandung HTML     | <p>Summary</p>         | Buang tag dengan                         |
+|                          |                        | replaceAll(RegExp(r'<[^>]*>'), '')       |
++--------------------------+------------------------+------------------------------------------+
+| List kosong atau null    | genres                 | List<String>.from(json['genres'] ?? [])  |
++--------------------------+------------------------+------------------------------------------+
+ 
+MEMBACA PESAN ERROR UNTUK MENEBAK SALAHNYA DI MANA
+ 
++------------------------------------+----------------------------+----------------------------------+
+| Pesan error                        | Artinya                    | Perbaikan                        |
++====================================+============================+==================================+
+| type 'List<dynamic>' is not a      | Kamu kira objek, ternyata  | Ubah penerimanya ke List, atau   |
+| subtype of type 'Map<String,       | list                       | cek apakah perlu [0]             |
+| dynamic>'                          |                            |                                  |
++------------------------------------+----------------------------+----------------------------------+
+| type '_Map<String, dynamic>' is    | Kamu kira list, ternyata   | Ambil dulu isi key pembungkusnya |
+| not a subtype of type              | objek                      |                                  |
+| 'List<dynamic>'                    |                            |                                  |
++------------------------------------+----------------------------+----------------------------------+
+| type 'Null' is not a subtype of    | Ada field yang null        | Beri ?? 'default' atau jadikan   |
+| type 'String'                      |                            | tipe nullable                    |
++------------------------------------+----------------------------+----------------------------------+
+| type 'int' is not a subtype of     | Tipe field tidak sesuai    | Samakan tipe, atau ubah dengan   |
+| type 'String'                      |                            | .toString()                      |
++------------------------------------+----------------------------+----------------------------------+
+| type 'String' is not a subtype of  | Id ternyata String         | Ambil sebagai String atau        |
+| type 'int'                         |                            | int.parse                        |
++------------------------------------+----------------------------+----------------------------------+
+| NoSuchMethodError: '[]' was called | Key salah, atau level      | Cek ulang nama key dan urutan    |
+| on null                            | sarangnya kurang           | masuknya                         |
++------------------------------------+----------------------------+----------------------------------+
+ 
+
+ Contoh alur lengkap
+
+Soal baru memakai API yang mengembalikan:
+{ "meals": [ {"idMeal": "1", "strMeal": "Nasi Goreng", "strMealThumb": "https://...jpg"} ] }
+1. Lihat JSON. Diawali {, jadi Map. List-nya ada di key meals.
+2. Model: ambil 3 field itu.
+
+class Meal {
+  final String id, name;
+  final String? image;
+  Meal({required this.id, required this.name, this.image});
+
+  factory Meal.fromJson(Map<String, dynamic> j) => Meal(
+        id: j['idMeal'],
+        name: j['strMeal'],
+        image: j['strMealThumb'],
+      );
+}
+3. Service:
+final body = jsonDecode(res.body) as Map<String, dynamic>;
+final List data = body['meals'] ?? [];
+return data.map((e) => Meal.fromJson(e)).toList();
+4. Tes: jalankan, lalu lihat apakah datanya tampil. Kalau error, cocokkan pesannya dengan tabel di atas.
+
+Rangkuman cepat
+Buka URL di browser dan lihat JSON-nya.
+[ berarti List, { berarti Map.
+Cek apakah ada key pembungkus, dan ambil dengan body['key'].
+Masuk ke field bersarang satu level demi satu level pakai ?.
+Antisipasi null dan perbedaan tipe.
+Kalau error, baca pesannya dan cocokkan dengan tabel.
